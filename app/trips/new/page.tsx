@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { createTripInBitrix24 } from '@/lib/bitrix24';
 import { ArrowLeft, Calendar, MapPin, FileText, Plus } from 'lucide-react';
 
 export default function CreateTrip() {
@@ -27,14 +28,13 @@ export default function CreateTrip() {
     e.preventDefault();
     setLoading(true);
 
-    // Валидация
     if (!formData.title.trim()) {
       alert('Введите название поездки');
       setLoading(false);
       return;
     }
 
-    // Сохраняем в Supabase
+    // 1. Сохраняем в Supabase
     const { data, error } = await supabase
       .from('trips')
       .insert({
@@ -49,10 +49,28 @@ export default function CreateTrip() {
       .single();
 
     if (error) {
-      console.error('Ошибка:', error);
+      console.error('Ошибка Supabase:', error);
       alert('Ошибка при создании поездки: ' + error.message);
       setLoading(false);
       return;
+    }
+
+    // 2. Отправляем в Bitrix24
+    if (data) {
+      try {
+        await createTripInBitrix24({
+          id: data.id,
+          title: formData.title,
+          location: formData.location,
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          description: formData.description,
+          status: 'planning',
+        });
+        console.log('✅ Поездка отправлена в Bitrix24');
+      } catch (err) {
+        console.error('❌ Ошибка отправки в Bitrix24:', err);
+      }
     }
 
     alert('✅ Поездка "' + data.title + '" успешно создана!');
@@ -70,7 +88,6 @@ export default function CreateTrip() {
 
       <main className="max-w-2xl mx-auto p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Название поездки */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
               <Plus size={16} />
@@ -87,7 +104,6 @@ export default function CreateTrip() {
             />
           </div>
 
-          {/* Локация */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
               <MapPin size={16} />
@@ -103,7 +119,6 @@ export default function CreateTrip() {
             />
           </div>
 
-          {/* Даты */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
@@ -133,7 +148,6 @@ export default function CreateTrip() {
             </div>
           </div>
 
-          {/* Описание */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
               <FileText size={16} />
@@ -149,7 +163,6 @@ export default function CreateTrip() {
             />
           </div>
 
-          {/* Кнопки */}
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
