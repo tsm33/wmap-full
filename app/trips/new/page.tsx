@@ -18,25 +18,21 @@ export default function CreateTrip() {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  console.log('🔵 Функция handleSubmit вызвана! Код интеграции Будет выполняться');
-  setLoading(true);
+    e.preventDefault();
+    console.log('🔵 1. handleSubmit вызвана');
+    setLoading(true);
 
-    // Валидация
     if (!formData.title.trim()) {
       alert('Введите название поездки');
       setLoading(false);
       return;
     }
 
-    // 1. Сохраняем в Supabase
+    console.log('🔵 2. Сохраняем в Supabase...');
     const { data, error } = await supabase
       .from('trips')
       .insert({
@@ -51,29 +47,28 @@ export default function CreateTrip() {
       .single();
 
     if (error) {
-      console.error('Ошибка Supabase:', error);
-      alert('Ошибка при создании поездки: ' + error.message);
+      console.error('❌ Ошибка Supabase:', error);
+      alert('Ошибка при создании поездки');
       setLoading(false);
       return;
     }
 
-    // 2. Отправляем в Bitrix24 (если данные получены)
-    if (data) {
-      try {
-        await createTripInBitrix24({
-          id: data.id,
-          title: formData.title,
-          location: formData.location,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          description: formData.description,
-          status: 'planning',
-        });
-        console.log('✅ Поездка отправлена в Bitrix24');
-      } catch (err) {
-        console.error('❌ Ошибка отправки в Bitrix24:', err);
-        // Не прерываем выполнение — поездка уже создана в Supabase
-      }
+    console.log('🔵 3. Поездка создана в Supabase, ID:', data.id);
+    console.log('🔵 4. Отправляем в Bitrix24...');
+
+    try {
+      const result = await createTripInBitrix24({
+        id: data.id,
+        title: formData.title,
+        location: formData.location,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        description: formData.description,
+        status: 'planning',
+      });
+      console.log('🔵 5. Результат Bitrix24:', result);
+    } catch (err) {
+      console.error('❌ Ошибка Bitrix24:', err);
     }
 
     alert('✅ Поездка "' + data.title + '" успешно создана!');
@@ -88,104 +83,39 @@ export default function CreateTrip() {
         </Link>
         <h1 className="font-bold text-2xl text-white">Создать новую поездку</h1>
       </header>
-
       <main className="max-w-2xl mx-auto p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Название поездки */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-              <Plus size={16} />
-              Название поездки *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Например: Выходные в Москве"
-              className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-white transition"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">Название поездки *</label>
+            <input type="text" name="title" value={formData.title} onChange={handleChange}
+              className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white" required />
           </div>
-
-          {/* Локация */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-              <MapPin size={16} />
-              Локация (город или регион)
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Например: Москва, Санкт-Петербург"
-              className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-white transition"
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">Локация</label>
+            <input type="text" name="location" value={formData.location} onChange={handleChange}
+              className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white" />
           </div>
-
-          {/* Даты */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                <Calendar size={16} />
-                Дата начала
-              </label>
-              <input
-                type="date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-white transition"
-              />
+              <label className="block text-sm font-medium text-gray-300 mb-2">Дата начала</label>
+              <input type="date" name="start_date" value={formData.start_date} onChange={handleChange}
+                className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                <Calendar size={16} />
-                Дата окончания
-              </label>
-              <input
-                type="date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleChange}
-                className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-white transition"
-              />
+              <label className="block text-sm font-medium text-gray-300 mb-2">Дата окончания</label>
+              <input type="date" name="end_date" value={formData.end_date} onChange={handleChange}
+                className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white" />
             </div>
           </div>
-
-          {/* Описание */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-              <FileText size={16} />
-              Описание (необязательно)
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Расскажите о планах, компании, целях поездки..."
-              className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-white transition resize-none"
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">Описание</label>
+            <textarea name="description" value={formData.description} onChange={handleChange}
+              rows={4} className="w-full bg-zinc-900 border border-gray-700 rounded-2xl px-5 py-4 text-white" />
           </div>
-
-          {/* Кнопки */}
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-white text-black py-4 rounded-2xl text-lg font-semibold hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Создаём...' : '✨ Создать поездку'}
-            </button>
-            <Link
-              href="/trips"
-              className="flex-1 border border-gray-700 text-center py-4 rounded-2xl text-lg font-medium hover:bg-zinc-900 transition"
-            >
-              Отмена
-            </Link>
-          </div>
+          <button type="submit" disabled={loading}
+            className="w-full bg-white text-black py-4 rounded-2xl text-lg font-semibold">
+            {loading ? 'Создаём...' : '✨ Создать поездку'}
+          </button>
         </form>
       </main>
     </div>
