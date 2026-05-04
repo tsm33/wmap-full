@@ -25,9 +25,11 @@ export default function CreateTrip() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  console.log('🔵 Функция handleSubmit вызвана! Код интеграции Будет выполняться');
+  setLoading(true);
 
+    // Валидация
     if (!formData.title.trim()) {
       alert('Введите название поездки');
       setLoading(false);
@@ -55,7 +57,7 @@ export default function CreateTrip() {
       return;
     }
 
-    // 2. Отправляем в Bitrix24
+    // 2. Отправляем в Bitrix24 (если данные получены)
     if (data) {
       try {
         await createTripInBitrix24({
@@ -70,6 +72,7 @@ export default function CreateTrip() {
         console.log('✅ Поездка отправлена в Bitrix24');
       } catch (err) {
         console.error('❌ Ошибка отправки в Bitrix24:', err);
+        // Не прерываем выполнение — поездка уже создана в Supabase
       }
     }
 
@@ -88,6 +91,7 @@ export default function CreateTrip() {
 
       <main className="max-w-2xl mx-auto p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Название поездки */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
               <Plus size={16} />
@@ -104,6 +108,7 @@ export default function CreateTrip() {
             />
           </div>
 
+          {/* Локация */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
               <MapPin size={16} />
@@ -119,6 +124,7 @@ export default function CreateTrip() {
             />
           </div>
 
+          {/* Даты */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
@@ -148,6 +154,7 @@ export default function CreateTrip() {
             </div>
           </div>
 
+          {/* Описание */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
               <FileText size={16} />
@@ -163,6 +170,7 @@ export default function CreateTrip() {
             />
           </div>
 
+          {/* Кнопки */}
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
